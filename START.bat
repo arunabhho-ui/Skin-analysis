@@ -59,13 +59,27 @@ if not exist "node_modules\next\package.json" (
 )
 
 echo Starting the Python model backend on port 8000...
-start "Nexzen Backend" cmd /k "cd /d ^"%~dp0^" && call .venv\Scripts\activate.bat && python -m uvicorn backend.api:app --host 127.0.0.1 --port 8000"
+>"%TEMP%\nexzen-backend.cmd" echo @echo off
+>>"%TEMP%\nexzen-backend.cmd" echo cd /d "%~dp0"
+>>"%TEMP%\nexzen-backend.cmd" echo call ".venv\Scripts\activate.bat"
+>>"%TEMP%\nexzen-backend.cmd" echo python -m uvicorn backend.api:app --host 127.0.0.1 --port 8000
+start "Nexzen Backend" cmd /k call "%TEMP%\nexzen-backend.cmd"
 
 echo Starting the Next.js frontend on port 3000...
-start "Nexzen Frontend" cmd /k "cd /d ^"%~dp0^" && set NEXT_PUBLIC_ANALYSIS_API_URL=http://127.0.0.1:8000/analyze && npm run dev"
+>"%TEMP%\nexzen-frontend.cmd" echo @echo off
+>>"%TEMP%\nexzen-frontend.cmd" echo cd /d "%~dp0"
+>>"%TEMP%\nexzen-frontend.cmd" echo set NEXT_PUBLIC_ANALYSIS_API_URL=http://127.0.0.1:8000/analyze
+>>"%TEMP%\nexzen-frontend.cmd" echo npm run dev
+start "Nexzen Frontend" cmd /k call "%TEMP%\nexzen-frontend.cmd"
 
 echo Waiting for the frontend to start...
-timeout /t 8 /nobreak >nul
+for /l %%N in (1,1,30) do (
+    powershell -NoProfile -ExecutionPolicy Bypass -Command "try { if ((Invoke-WebRequest -UseBasicParsing http://localhost:3000 -TimeoutSec 1).StatusCode -eq 200) { exit 0 } } catch {} ; exit 1" >nul 2>nul
+    if not errorlevel 1 goto frontend_ready
+    timeout /t 1 /nobreak >nul
+)
+
+:frontend_ready
 start "" http://localhost:3000
 
 echo.

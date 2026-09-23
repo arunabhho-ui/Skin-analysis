@@ -1,6 +1,7 @@
 node_modules/
 .next/
 tmp/
+.venv/
 __pycache__/
 *.py[cod]
 .env*

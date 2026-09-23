@@ -17,7 +17,8 @@ export async function analyzeFace(imageBlobOrDataUrl: Blob | string): Promise<Sk
     imageData = imageBlobOrDataUrl;
   }
 
-  const response = await fetch("/api/analyze", {
+  const analysisUrl = process.env.NEXT_PUBLIC_ANALYSIS_API_URL || "/api/analyze";
+  const response = await fetch(analysisUrl, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ imageData }),

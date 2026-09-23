@@ -341,14 +341,7 @@ def build_aging_signals(concerns):
     return [{"id": "wrinkles", "label": "Wrinkles", "confidence": wrinkle["confidence"]}]
 
 
-def main():
-    if len(sys.argv) < 3:
-        raise SystemExit("Usage: python face_pipeline.py <input_image> <output_json>")
-
-    input_path = Path(sys.argv[1])
-    output_path = Path(sys.argv[2])
-
-    image = Image.open(input_path).convert("RGB")
+def analyze_image(image):
     face_mask, zone_masks = extract_face_from_landmarks(image)
 
     if face_mask is None or face_mask.size == 0:
@@ -360,7 +353,7 @@ def main():
     aging = build_aging_signals(concerns)
     face_polygon = build_face_polygon(face_mask)
 
-    report = {
+    return {
         "faceMask": face_polygon,
         "skinType": skin_type,
         "concerns": concerns,
@@ -368,6 +361,15 @@ def main():
         "recommendations": recommendations,
         "timestamp": __import__("datetime").datetime.utcnow().isoformat() + "Z",
     }
+
+
+def main():
+    if len(sys.argv) < 3:
+        raise SystemExit("Usage: python face_pipeline.py <input_image> <output_json>")
+
+    input_path = Path(sys.argv[1])
+    output_path = Path(sys.argv[2])
+    report = analyze_image(Image.open(input_path).convert("RGB"))
 
     output_path.parent.mkdir(parents=True, exist_ok=True)
     output_path.write_text(json.dumps(report), encoding="utf-8")
